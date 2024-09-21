@@ -2,6 +2,7 @@
 #pragma once
 
 #include <cstdint>
+#include <iostream>
 #include <list>
 #include <string>
 
@@ -15,8 +16,8 @@ class Instruction {
 private:
   uint64_t _address;
   std::string _code;
-  BasicBlock *_basic_block;
-  Function *_function;
+  BasicBlock *_basic_block{};
+  Function *_function{};
 
 public:
   Instruction(BasicBlock *parent, uint64_t address, std::string code)
@@ -41,7 +42,9 @@ public:
     return &_instructions.back();
   }
 
-  void hash(); // TODO: implement
+  uint64_t hash();
+
+  void print(std::ostream &os);
 };
 
 class Function {
@@ -64,7 +67,12 @@ public:
     _padding.emplace_back(this, args...);
     return &_padding.back();
   }
+
   uint64_t get_start_address() { return _start_address; }
+
+  std::string get_name() { return _name; }
+
+  void print(std::ostream &os);
 };
 class Section {
 private:
@@ -80,6 +88,8 @@ public:
     _functions.emplace_back(this, args...);
     return &_functions.back();
   }
+
+  void print(std::ostream &os);
 };
 
 class ObjectFile {
@@ -88,6 +98,9 @@ public:
     _sections.emplace_back(this, args...);
     return &_sections.back();
   }
+  ObjectFile() = default;
+
+  void print(std::ostream &os);
 
 private:
   std::list<Section> _sections;
