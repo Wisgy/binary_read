@@ -63,36 +63,41 @@ std::pair<event, TextInfo> parse_text(std::string &text) {
     // Parse instruction code
     ss >> ti.code;
     ss.ignore();
-    while (not isspace(int(ss.peek()))) {
+    while (not isspace(int(ss.peek())) and not ss.eof()) {
       std::string byte;
       ss >> byte;
       ti.code += byte;
       ss.ignore();
     }
-    std::getline(ss, temp);
-    // Trim comment
-    size_t commentPos = temp.find('#');
-    if (commentPos != std::string::npos) {
-      temp = temp.substr(0, commentPos);
-    }
-    // Trim leading and trailing whitespaces
-    auto start = temp.begin();
-    auto end = temp.end();
-    while (start != end && std::isspace(*start)) {
-      ++start;
-    }
-    while (start != end && std::isspace(*(end - 1))) {
-      --end;
-    }
-    ti.name = std::string(start, end);
-    // Check properties of instruction
-    if (ti.name[0] == 'j' || ti.name.compare(0, 4, "loop") == 0 ||
-        ti.name.compare(0, 3, "ret") == 0) {
-      e = event::BRANCH;
-    } else if (ti.name.compare(0, 3, "nop") == 0) {
+    if (ss.eof()) {
       e = event::PAD;
+      ti.name = "";
     } else {
-      e = event::INST;
+      std::getline(ss, temp);
+      // Trim comment
+      size_t commentPos = temp.find('#');
+      if (commentPos != std::string::npos) {
+        temp = temp.substr(0, commentPos);
+      }
+      // Trim leading and trailing whitespaces
+      auto start = temp.begin();
+      auto end = temp.end();
+      while (start != end && std::isspace(*start)) {
+        ++start;
+      }
+      while (start != end && std::isspace(*(end - 1))) {
+        --end;
+      }
+      ti.name = std::string(start, end);
+      // Check properties of instruction
+      if (ti.name[0] == 'j' || ti.name.compare(0, 4, "loop") == 0 ||
+          ti.name.compare(0, 3, "ret") == 0) {
+        e = event::BRANCH;
+      } else if (ti.name.compare(0, 3, "nop") == 0) {
+        e = event::PAD;
+      } else {
+        e = event::INST;
+      }
     }
   } else if (text.size() == 0) {
     e = event::NEWLINE;
@@ -118,7 +123,12 @@ void pattern_match(std::ifstream &infile) {
   BasicBlock *bb = nullptr;
   std::string line;
   state s = state::OBJECT;
+  int times = 0;
   while (std::getline(infile, line)) {
+    std::cout << times++ << std::endl;
+    if (times == 336) {
+      std::cout << "here" << std::endl;
+    }
     auto info = parse_text(line);
     auto actions = transition(s, info.first);
     for (auto a : actions) {
@@ -138,9 +148,9 @@ void pattern_match(std::ifstream &infile) {
         func = sect->create_function(info.second.name, info.second.address);
         break;
       case act::CRT_BB:
-        if (bb == nullptr) {
+        if (func == nullptr) {
           throw std::runtime_error(
-              "Logic Vulnerablity: Basic block is not created");
+              "Logic Vulnerablity: Function is not created");
         }
         bb = func->create_basic_block(info.second.address -
                                       func->get_start_address());
@@ -162,6 +172,7 @@ void pattern_match(std::ifstream &infile) {
       }
     }
   }
+  obj->print(std::cout);
 }
 
 void execute_and_parse_objdump(const std::string &command) {

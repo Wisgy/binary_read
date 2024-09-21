@@ -48,6 +48,9 @@ std::vector<act> transition(state &s, event e) {
       return {act::CRT_INST};
     case event::PAD:
       return {act::CRT_PAD};
+    case event::NEWLINE: // FIXME: need to modify the state_machine
+      s = state::WAIT;
+      return {};
     default:
       goto error;
     }
