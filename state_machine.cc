@@ -1,13 +1,14 @@
 #include "state_machine.hh"
 #include <stdexcept>
+#include <utility>
 
-std::vector<act> transition(state &s, event e) {
+std::vector<StateMachine::action> StateMachine::transition(event e) {
   switch (s) {
   case state::OBJECT:
     switch (e) {
     case event::NEWSECT:
       s = state::SECTION;
-      return {act::CRT_SECT};
+      return {action::CRT_SECT};
     case event::NEWLINE:
     case event::PATH:
       return {};
@@ -18,7 +19,7 @@ std::vector<act> transition(state &s, event e) {
     switch (e) {
     case event::NEWFUNC:
       s = state::FUNCTION;
-      return {act::CRT_FUNC};
+      return {action::CRT_FUNC};
     case event::NEWLINE:
       return {};
     default:
@@ -31,23 +32,23 @@ std::vector<act> transition(state &s, event e) {
       return {};
     case event::INST:
       s = state::BASICBLOCK;
-      return {act::CRT_BB, act::CRT_INST};
+      return {action::CRT_BB, action::CRT_INST};
     case event::BRANCH:
-      return {act::CRT_BB, act::CRT_INST};
+      return {action::CRT_BB, action::CRT_INST};
     case event::PAD:
-      return {act::CRT_PAD};
+      return {action::CRT_PAD};
     default:
       goto error;
     }
   case state::BASICBLOCK:
     switch (e) {
     case event::INST:
-      return {act::CRT_INST};
+      return {action::CRT_INST};
     case event::BRANCH:
       s = state::FUNCTION;
-      return {act::CRT_INST};
+      return {action::CRT_INST};
     case event::PAD:
-      return {act::CRT_PAD};
+      return {action::CRT_PAD};
     case event::NEWLINE: // FIXME: need to modify the state_machine
       s = state::WAIT;
       return {};
@@ -58,10 +59,10 @@ std::vector<act> transition(state &s, event e) {
     switch (e) {
     case event::NEWFUNC:
       s = state::FUNCTION;
-      return {act::CRT_FUNC};
+      return {action::CRT_FUNC};
     case event::NEWSECT:
       s = state::SECTION;
-      return {act::CRT_SECT};
+      return {action::CRT_SECT};
     case event::NEWLINE:
       return {};
     default:
@@ -70,4 +71,8 @@ std::vector<act> transition(state &s, event e) {
   }
 error:
   throw std::runtime_error("Wrong event");
+}
+
+std::vector<StateMachine::action> StateMachine::get_next_action(event e) {
+  return std::move(transition(e));
 }
