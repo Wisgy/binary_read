@@ -2,8 +2,21 @@
 #include <cstdint>
 
 uint64_t BasicBlock::hash() {
-  // TODO: implement
-  return 0;
+  if (_hash != UINT64_MAX) {
+    return _hash;
+  }
+  std::hash<std::string> hasher;
+  uint64_t seed = 0;
+  for (const auto &inst : _instructions) {
+    auto str = inst.get_code();
+    seed ^= hasher(str) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+  }
+  return _hash = seed;
+}
+
+void Padding::print(std::ostream &os) {
+  os << "Function: " << _parent->get_name() << "  offset: " << _offset
+     << std::endl;
 }
 
 void BasicBlock::print(std::ostream &os) {
@@ -14,6 +27,9 @@ void BasicBlock::print(std::ostream &os) {
 void Function::print(std::ostream &os) {
   for (auto bb : _basic_blocks) {
     bb.print(os);
+  }
+  for (auto pad : _padding) {
+    pad.print(os);
   }
 }
 

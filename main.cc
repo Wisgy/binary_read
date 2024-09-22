@@ -167,7 +167,7 @@ void pattern_match(std::ifstream &infile) {
           throw std::runtime_error(
               "Logic Vulnerablity: Section is not created");
         }
-        func->create_padding(info.second.address, info.second.code);
+        func->create_padding(info.second.address- func->get_start_address());
         break;
       }
     }

@@ -16,20 +16,31 @@ class Instruction {
 private:
   uint64_t _address;
   std::string _code;
-  BasicBlock *_basic_block{};
-  Function *_function{};
+  BasicBlock *_parent;
 
 public:
   Instruction(BasicBlock *parent, uint64_t address, std::string code)
-      : _address(address), _code(code), _basic_block(parent) {}
-  Instruction(Function *parent, uint64_t address, std::string code)
-      : _address(address), _code(code), _function(parent) {}
+      : _address(address), _code(code), _parent(parent) {}
+
+  std::string get_code() const { return _code; }
+};
+
+class Padding {
+private:
+  uint64_t _offset;
+  Function *_parent;
+
+public:
+  Padding(Function *parent, uint64_t offset)
+      : _offset(offset), _parent(parent) {}
+
+  void print(std::ostream &os);
 };
 
 class BasicBlock {
 private:
   uint64_t _offset;
-  uint64_t _hash;
+  uint64_t _hash = UINT64_MAX;
   std::list<Instruction> _instructions;
   Function *_parent;
 
@@ -52,7 +63,7 @@ private:
   std::string _name;
   uint64_t _start_address;
   std::list<BasicBlock> _basic_blocks;
-  std::list<Instruction> _padding;
+  std::list<Padding> _padding;
   Section *_parent;
 
 public:
@@ -63,14 +74,14 @@ public:
     _basic_blocks.emplace_back(this, args...);
     return &_basic_blocks.back();
   }
-  template <typename... Args> Instruction *create_padding(Args... args) {
+  template <typename... Args> Padding *create_padding(Args... args) {
     _padding.emplace_back(this, args...);
     return &_padding.back();
   }
 
   uint64_t get_start_address() { return _start_address; }
 
-  std::string get_name() { return _name; }
+  std::string get_name() const { return _name; }
 
   void print(std::ostream &os);
 };
